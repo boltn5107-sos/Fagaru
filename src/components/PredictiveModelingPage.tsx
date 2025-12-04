@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, AlertTriangle, Activity, MapPin, Calendar, BarChart3, LineChart as LineIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, Activity, MapPin, Calendar, BarChart3, LineChart as LineIcon, Brain, Target, Zap, CheckCircle, XCircle, Info, Settings } from 'lucide-react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';

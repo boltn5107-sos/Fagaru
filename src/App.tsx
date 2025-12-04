@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Heart, Globe, Shield, User } from "lucide-react";
+import { Heart, Globe, Shield, User, LogOut, Settings } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import LoginForm from "./components/auth/LoginForm";
+import RegisterForm from "./components/auth/RegisterForm";
 import HomePage from "./components/HomePage";
 import DiseasesPage from "./components/DiseasesPage";
 import QuizPage from "./components/QuizPage";
@@ -14,104 +17,251 @@ import PredictiveModelingPage from "./components/PredictiveModelingPage";
 import AuthorityAlertsPage from "./components/AuthorityAlertsPage";
 import DHIS2IntegrationPage from "./components/DHIS2IntegrationPage";
 
-export default function App() {
+// Main App Component with Authentication
+function AppContent() {
+  const { user, isAuthenticated, isLoading, login, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState("home");
   const [language, setLanguage] = useState("french");
-  const [userRole, setUserRole] = useState<"citizen" | "authority">("citizen");
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
   const toggleLanguage = () => {
     setLanguage(language === "wolof" ? "french" : "wolof");
   };
 
-  const toggleRole = () => {
-    setUserRole(userRole === "citizen" ? "authority" : "citizen");
-    setCurrentPage("home");
+  // Get navigation items based on user role
+  const getNavigationItems = () => {
+    if (!user) return [];
+
+    const role = user.role;
+    const baseItems = {
+      citizen: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "diseases", label: "Wér-gu-yaram", permission: "view_diseases" },
+          { id: "georeport", label: "Tànnal", permission: "create_alert" },
+          { id: "quiz", label: "Quiz", permission: "take_quiz" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "notifications", label: "Ay notification", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "diseases", label: "Maladies", permission: "view_diseases" },
+          { id: "georeport", label: "Signaler", permission: "create_alert" },
+          { id: "quiz", label: "Quiz", permission: "take_quiz" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "notifications", label: "Notifications", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      },
+      asc: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de bord", permission: "view_dashboard" },
+          { id: "georeport", label: "Tànnal", permission: "create_alert" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "notifications", label: "Ay notification", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de Bord", permission: "view_dashboard" },
+          { id: "georeport", label: "Signaler", permission: "create_alert" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "notifications", label: "Notifications", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      },
+      icp: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de bord", permission: "view_dashboard" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "notifications", label: "Ay notification", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de Bord", permission: "view_dashboard" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "notifications", label: "Notifications", permission: "view_notifications" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      },
+      medecinCentre: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de Bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      },
+      medecinDistrict: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "dhis2", label: "DHIS2", permission: "view_dhis2" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de Bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "dhis2", label: "DHIS2", permission: "view_dhis2" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      },
+      admin: {
+        wolof: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "dhis2", label: "DHIS2", permission: "view_dhis2" },
+          { id: "map", label: "Kaart", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+        french: [
+          { id: "home", label: "Accueil", permission: "view_home" },
+          { id: "dashboard", label: "Tableau de Bord", permission: "view_dashboard" },
+          { id: "predictive", label: "Modélisation", permission: "view_predictive" },
+          { id: "alerts", label: "Alertes IA", permission: "view_alerts" },
+          { id: "dhis2", label: "DHIS2", permission: "view_dhis2" },
+          { id: "map", label: "Carte", permission: "view_map" },
+          { id: "profile", label: "Profil", permission: "view_profile" },
+        ],
+      }
+    };
+
+    // Map role to navigation key
+    const roleKey = role === 'citizen' ? 'citizen' :
+                   role === 'asc' ? 'asc' :
+                   role === 'icp' ? 'icp' :
+                   role === 'medecinCentre' ? 'medecinCentre' :
+                   role === 'medecinDistrict' ? 'medecinDistrict' :
+                   'admin';
+
+    return baseItems[roleKey as keyof typeof baseItems]?.[language as keyof typeof baseItems.citizen] || [];
   };
 
-  const navigationItems = {
-    citizen: {
-      wolof: [
-        { id: "home", label: "Accueil" },
-        { id: "diseases", label: "Wér-gu-yaram" },
-        { id: "georeport", label: "Tànnal" },
-        { id: "quiz", label: "Quiz" },
-        { id: "map", label: "Kaart" },
-        { id: "notifications", label: "Ay notification" },
-        { id: "profile", label: "Profil" },
-      ],
-      french: [
-        { id: "home", label: "Accueil" },
-        { id: "diseases", label: "Maladies" },
-        { id: "georeport", label: "Signaler" },
-        { id: "quiz", label: "Quiz" },
-        { id: "map", label: "Carte" },
-        { id: "notifications", label: "Notifications" },
-        { id: "profile", label: "Profil" },
-      ],
-    },
-    authority: {
-      wolof: [
-        { id: "home", label: "Accueil" },
-        { id: "dashboard", label: "Tableau de bord" },
-        { id: "predictive", label: "Modélisation" },
-        { id: "alerts", label: "Alertes IA" },
-        { id: "dhis2", label: "DHIS2" },
-        { id: "map", label: "Kaart" },
-        { id: "profile", label: "Profil" },
-      ],
-      french: [
-        { id: "home", label: "Accueil" },
-        { id: "dashboard", label: "Tableau de Bord" },
-        { id: "predictive", label: "Modélisation" },
-        { id: "alerts", label: "Alertes IA" },
-        { id: "dhis2", label: "DHIS2" },
-        { id: "map", label: "Carte" },
-        { id: "profile", label: "Profil" },
-      ],
-    },
-  };
+  const navigationItems = getNavigationItems();
 
-  const currentNav =
-    navigationItems[userRole][language as keyof typeof navigationItems.citizen];
+  // Check if user has permission for a specific action
+  const hasPermission = (permission: string) => {
+    if (!user) return false;
+    return user.permissions.includes(permission) || user.permissions.includes('all_permissions');
+  };
 
   const renderPage = () => {
+    // Check permissions for each page
     switch (currentPage) {
       case "home":
-        return (
-          <HomePage
-            language={language}
-            onNavigate={setCurrentPage}
-          />
-        );
+        return hasPermission("view_home") ? (
+          <HomePage language={language} onNavigate={setCurrentPage} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "diseases":
-        return <DiseasesPage language={language} />;
+        return hasPermission("view_diseases") ? (
+          <DiseasesPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "georeport":
-        return <GeoReportPage language={language} />;
+        return hasPermission("create_alert") ? (
+          <GeoReportPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "quiz":
-        return <QuizPage language={language} />;
+        return hasPermission("take_quiz") ? (
+          <QuizPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "map":
-        return <MapInterface language={language} />;
+        return hasPermission("view_map") ? (
+          <MapInterface language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "notifications":
-        return <NotificationsInterface language={language} />;
+        return hasPermission("view_notifications") ? (
+          <NotificationsInterface language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "dashboard":
-        return <DashboardInterface language={language} />;
+        return hasPermission("view_dashboard") ? (
+          <DashboardInterface language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "predictive":
-        return <PredictiveModelingPage language={language} />;
+        return hasPermission("view_predictive") ? (
+          <PredictiveModelingPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "alerts":
-        return <AuthorityAlertsPage language={language} />;
+        return hasPermission("view_alerts") ? (
+          <AuthorityAlertsPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "dhis2":
-        return <DHIS2IntegrationPage language={language} />;
+        return hasPermission("view_dhis2") ? (
+          <DHIS2IntegrationPage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       case "profile":
-        return <ProfilePage language={language} />;
+        return hasPermission("view_profile") ? (
+          <ProfilePage language={language} />
+        ) : <AccessDeniedPage language={language} />;
+
       default:
-        return (
-          <HomePage
-            language={language}
-            onNavigate={setCurrentPage}
-          />
-        );
+        return <HomePage language={language} onNavigate={setCurrentPage} />;
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Heart className="w-8 h-8 text-white animate-pulse" />
+          </div>
+          <p className="text-slate-600">
+            {language === "wolof" ? "Chargement..." : "Chargement..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Authentication required
+  if (!isAuthenticated) {
+    return authMode === "login" ? (
+      <LoginForm
+        language={language}
+        onLogin={login}
+        onSwitchToRegister={() => setAuthMode("register")}
+      />
+    ) : (
+      <RegisterForm
+        language={language}
+        onRegister={login}
+        onSwitchToLogin={() => setAuthMode("login")}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -123,10 +273,7 @@ export default function App() {
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-600 to-blue-600 flex items-center justify-center">
-                <Heart
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                />
+                <Heart className="w-6 h-6 text-white" fill="currentColor" />
               </div>
               <div>
                 <h2 className="text-emerald-700">Fagaru</h2>
@@ -139,45 +286,36 @@ export default function App() {
             </button>
 
             <nav className="hidden lg:flex items-center gap-2">
-              {currentNav.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentPage(item.id)}
-                  className={`px-4 py-2 rounded-lg transition-all ${
-                    currentPage === item.id
-                      ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white"
-                      : "text-slate-700 hover:bg-emerald-50"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {navigationItems
+                .filter(item => hasPermission(item.permission))
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentPage(item.id)}
+                    className={`px-4 py-2 rounded-lg transition-all ${
+                      currentPage === item.id
+                        ? "bg-gradient-to-r from-emerald-600 to-blue-600 text-white"
+                        : "text-slate-700 hover:bg-emerald-50"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
             </nav>
 
             <div className="flex items-center gap-2">
-              {/* Role Switcher */}
-              <Button
-                onClick={toggleRole}
-                variant="outline"
-                size="sm"
-                className={`${
-                  userRole === "authority"
-                    ? "border-purple-300 text-purple-700 hover:bg-purple-50"
-                    : "border-blue-300 text-blue-700 hover:bg-blue-50"
-                }`}
-              >
-                {userRole === "authority" ? (
-                  <>
-                    <Shield className="w-4 h-4 mr-2" />
-                    {language === "french" ? "Autorité" : "Autorité"}
-                  </>
-                ) : (
-                  <>
-                    <User className="w-4 h-4 mr-2" />
-                    {language === "french" ? "Citoyen" : "Citoyen"}
-                  </>
-                )}
-              </Button>
+              {/* User Info */}
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+                  {user.role === 'citizen' ? (language === 'wolof' ? 'Citoyen' : 'Citoyen') :
+                   user.role === 'asc' ? 'ASC' :
+                   user.role === 'icp' ? 'ICP' :
+                   user.role === 'medecinCentre' ? (language === 'wolof' ? 'Médecin Centre' : 'Médecin Centre') :
+                   user.role === 'medecinDistrict' ? (language === 'wolof' ? 'Médecin District' : 'Médecin District') :
+                   'Admin'}
+                </Badge>
+                <span className="text-slate-600">{user.name}</span>
+              </div>
 
               {/* Language Switcher */}
               <Button
@@ -188,6 +326,16 @@ export default function App() {
               >
                 <Globe className="w-4 h-4 mr-2" />
                 {language === "wolof" ? "FR" : "WO"}
+              </Button>
+
+              {/* Logout */}
+              <Button
+                onClick={logout}
+                variant="outline"
+                size="sm"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -251,5 +399,33 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Access Denied Component
+function AccessDeniedPage({ language }: { language: string }) {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center">
+        <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">
+          {language === "wolof" ? "Amuñ ko man" : "Accès refusé"}
+        </h2>
+        <p className="text-slate-600">
+          {language === "wolof"
+            ? "Amul sañ-sañ ngir jëmale xët wi"
+            : "Vous n'avez pas les permissions nécessaires pour accéder à cette page"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Main App with AuthProvider
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
