@@ -1,4 +1,5 @@
-import { Search, Volume2, Video, Heart, AlertCircle, Activity, Droplet, Bug, Wind, Shield } from 'lucide-react';
+import { Search, Volume2, Video, Heart, AlertCircle, Activity, Droplet, Bug, Wind, Shield, X } from 'lucide-react';
+import { useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,6 +11,33 @@ interface DiseasesPageProps {
 }
 
 export default function DiseasesPage({ language }: DiseasesPageProps) {
+  const [selectedVideo, setSelectedVideo] = useState<{ src: string; local: boolean } | null>(null);
+  const [selectedAudio, setSelectedAudio] = useState<string | null>(null);
+
+  // Fonction pour convertir les liens YouTube en format embed
+  const convertYoutubeUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // Si c'est déjà un lien embed, le retourner tel quel
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // Convertir youtu.be/... en youtube.com/embed/...
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    // Convertir youtube.com/watch?v=... en youtube.com/embed/...
+    if (url.includes('youtube.com/watch')) {
+      const videoId = url.split('v=')[1].split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url;
+  };
+
   const t = {
     wolof: {
       title: "Wér-gu-yaram",
@@ -56,6 +84,9 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
       icon: Wind,
       color: "from-red-500 to-orange-500",
       risk: "high",
+      videoUrl: "https://youtu.be/Pia2cI_q2SI?si=Q1gAcTeIZKb9VhIt",
+      videoLocal: "/media/video/covid19_wolof.mp4",
+      audioUrls: { wolof: "/media/audio/covid19_wolof.mp3", french: "/media/audio/covid19_fr.mp3" },
       description: language === 'wolof'
         ? "Wér-gu-yaram bu am solo bu jëm ci coronavirus bu bees"
         : "Maladie infectieuse causée par le coronavirus SARS-CoV-2",
@@ -75,6 +106,9 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
       icon: Activity,
       color: "from-purple-500 to-pink-500",
       risk: "medium",
+      videoUrl: "https://youtu.be/OPdDQ6POMN0?si=Z-A12JN4yUpcNoxL",
+      videoLocal: "/media/video/vih_sida_wolof.mp4",
+      audioUrls: { wolof: "/media/audio/vih_sida_wolof.mp3", french: "/media/audio/vih_sida_fr.mp3" },
       description: language === 'wolof'
         ? "Wér-gu-yaram bu jafe sistem bi lakkat yaram"
         : "Virus qui affaiblit le système immunitaire de l'organisme",
@@ -94,6 +128,9 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
       icon: Droplet,
       color: "from-blue-500 to-cyan-500",
       risk: "medium",
+      videoUrl: "https://youtu.be/fhXdMwJisms?si=1KLTAR7R73Ij_J0u",
+      videoLocal: "/media/video/tuberculose_wolof.mp4",
+      audioUrls: { wolof: "/media/audio/tuberculose_wolof.mp3", french: "/media/audio/tuberculose_fr.mp3" },
       description: language === 'wolof'
         ? "Wér-gu-yaram bu jafe péew ak seen ay mbooloom"
         : "Maladie infectieuse qui affecte principalement les poumons",
@@ -113,6 +150,9 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
       icon: Bug,
       color: "from-green-500 to-emerald-600",
       risk: "high",
+      videoUrl: "https://youtu.be/-Rkn6WpJ6jo?si=LnvIQSY3Ai4FiYI7",
+      videoLocal: "/media/video/paludisme_wolof.mp4",
+      audioUrls: { wolof: "/media/audio/paludisme_wolof.mp3", french: "/media/audio/paludisme_fr.mp3" },
       description: language === 'wolof'
         ? "Wér-gu-yaram bu jëm ci dangaan bu tudd muskiteer Anopheles"
         : "Maladie causée par un parasite transmis par les moustiques Anopheles",
@@ -132,6 +172,9 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
       icon: Shield,
       color: "from-yellow-500 to-orange-600",
       risk: "medium",
+      videoUrl: "https://youtu.be/MYQUeC_lpfE?si=StxmnR3r5lQ3V7yf",
+      videoLocal: "/media/video/hepatite_b_wolof.mp4",
+      audioUrls: { wolof: "/media/audio/hepatite_b_wolof.mp3", french: "/media/audio/hepatite_b_fr.mp3" },
       description: language === 'wolof'
         ? "Wér-gu-yaram bu jafe foie"
         : "Infection virale qui affecte le foie et peut devenir chronique",
@@ -275,11 +318,27 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                    onClick={() => setSelectedAudio(disease.audioUrls?.[language as 'wolof' | 'french'] || disease.audioUrls?.french)}
+                  >
                     <Volume2 className="w-4 h-4 mr-1" />
                     {text.listen}
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50"
+                    onClick={() => {
+                      if (language === 'wolof' && disease.videoLocal) {
+                        setSelectedVideo({ src: disease.videoLocal, local: true });
+                      } else {
+                        setSelectedVideo({ src: convertYoutubeUrl(disease.videoUrl), local: false });
+                      }
+                    }}
+                  >
                     <Video className="w-4 h-4 mr-1" />
                     {text.watchVideo}
                   </Button>
@@ -289,6 +348,80 @@ export default function DiseasesPage({ language }: DiseasesPageProps) {
           );
         })}
       </div>
+
+      {/* Modale vidéo */}
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-semibold text-slate-800">{text.watchVideo}</h2>
+              <button 
+                onClick={() => setSelectedVideo(null)}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                {selectedVideo.local ? (
+                  <video width="100%" height="100%" controls className="w-full h-full bg-black">
+                    <source src={selectedVideo.src} type="video/mp4" />
+                    Votre navigateur ne supporte pas l'élément vidéo.
+                  </video>
+                ) : (
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={selectedVideo.src}
+                    title="Disease Video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                  ></iframe>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale audio */}
+      {selectedAudio && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-semibold text-slate-800">{text.listen}</h2>
+              <button 
+                onClick={() => setSelectedAudio(null)}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="bg-gradient-to-br from-emerald-500 to-blue-500 rounded-lg p-8 flex items-center justify-center mb-4">
+                <Volume2 className="w-16 h-16 text-white" />
+              </div>
+              <audio
+                controls
+                className="w-full mb-4"
+                controlsList="nodownload"
+              >
+                <source src={selectedAudio} type="audio/mpeg" />
+                Votre navigateur ne supporte pas l'élément audio.
+              </audio>
+              <Button 
+                onClick={() => setSelectedAudio(null)}
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+              >
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
